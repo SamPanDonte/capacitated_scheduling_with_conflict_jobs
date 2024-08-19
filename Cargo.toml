@@ -1,0 +1,17 @@
+[package]
+name = "capacitated_scheduling_with_conflicts"
+version = "0.1.0"
+authors = ["Bartosz Wawrzyniak <bartosz.wawrzyniak.2000@gmail.com>"]
+edition = "2021"
+rust-version = "1.80"
+description = "Program designed to solve capacitated scheduling problem with conflict graph problem."
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+publish = false
+
+[dependencies]
+
+[profile.release]
+strip = true
+lto = true
+panic = "abort"
