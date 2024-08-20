@@ -36,3 +36,16 @@ pub fn run_from_stdin<T: core::Scheduler>(scheduler: T) -> anyhow::Result<()> {
 
     Ok(())
 }
+
+/// Macro to create a binary that reads an instance from stdin,
+/// schedules it and writes the schedule to stdout.
+#[macro_export]
+macro_rules! binary_main {
+    ($input:expr) => {
+        use capacitated_scheduling_with_conflicts::{algo, run_from_stdin};
+
+        fn main() -> anyhow::Result<()> {
+            run_from_stdin($input)
+        }
+    };
+}
