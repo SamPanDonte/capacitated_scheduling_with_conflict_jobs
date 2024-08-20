@@ -23,14 +23,15 @@ pub struct ConflictGraph {
 
 impl ConflictGraph {
     /// Returns whether the given tasks conflict.
+    #[must_use]
     pub fn are_conflicted(&self, first: usize, second: usize) -> bool {
         self.edges
             .get(first)
-            .map(|conflicts| conflicts.contains(&second))
-            .unwrap_or(false)
+            .map_or(false, |conflicts| conflicts.contains(&second))
     }
 
     /// Returns the conflicts of the given task.
+    #[must_use]
     pub fn conflicts(&self, task: usize) -> &HashSet<usize> {
         static EMPTY: LazyLock<HashSet<usize>> = LazyLock::new(HashSet::new);
 
@@ -51,13 +52,13 @@ impl From<Vec<Conflict>> for ConflictGraph {
             edges[conflict.1].insert(conflict.0);
         }
 
-        ConflictGraph { edges }
+        Self { edges }
     }
 }
 
 impl From<ConflictGraph> for Vec<Conflict> {
     fn from(conflicts: ConflictGraph) -> Self {
-        let mut result = Vec::new();
+        let mut result = Self::new();
 
         for (from_vertex, adjacent_vertices) in conflicts.edges.into_iter().enumerate() {
             for to_vertex in adjacent_vertices {

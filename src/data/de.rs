@@ -32,7 +32,7 @@ pub enum Error {
 
 impl serde::de::Error for Error {
     fn custom<T: core::fmt::Display>(msg: T) -> Self {
-        Error::Custom(msg.to_string())
+        Self::Custom(msg.to_string())
     }
 }
 
@@ -364,7 +364,7 @@ mod tests {
 
     #[test]
     fn deserialize_bool_error() {
-        test!(err, bool, "a", ParseBoolError, EOF);
+        test!(err, bool, "a", _err, EOF);
     }
 
     #[test]
@@ -460,7 +460,7 @@ mod tests {
 
     #[test]
     fn deserialize_u32() {
-        test!(u32, "1 4294967295", 1, 4294967295);
+        test!(u32, "1 4294967295", 1, 4_294_967_295);
     }
 
     #[test]
@@ -477,7 +477,7 @@ mod tests {
 
     #[test]
     fn deserialize_u64() {
-        test!(u64, "1 18446744073709551615", 1, 18446744073709551615);
+        test!(u64, "1 18446744073709551615", 1, 18_446_744_073_709_551_615);
     }
 
     #[test]
@@ -498,7 +498,7 @@ mod tests {
             u128,
             "1 340282366920938463463374607431768211455",
             1,
-            340282366920938463463374607431768211455
+            340_282_366_920_938_463_463_374_607_431_768_211_455
         );
     }
 
@@ -515,6 +515,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn deserialize_f32() {
         test!(f32, "1.5 -1.5", 1.5, -1.5);
     }
@@ -525,6 +526,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::float_cmp)]
     fn deserialize_f64() {
         test!(f64, "1.5 -1.5", 1.5, -1.5);
     }

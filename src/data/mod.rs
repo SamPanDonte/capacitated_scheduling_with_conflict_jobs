@@ -6,16 +6,25 @@ use serde::{Deserialize, Serialize};
 use std::io::{stdin, BufRead};
 
 /// Deserialize a value from buffered input.
+///
+/// # Errors
+/// - If the input is not valid.
 pub fn deserialize<'de, I: BufRead, T: Deserialize<'de>>(input: &'de mut I) -> de::Result<T> {
     T::deserialize(&mut de::Deserializer::new(input))
 }
 
 /// Deserialize a value from stdin.
+///
+/// # Errors
+/// - If the input is not valid.
 pub fn from_stdin<T: DeserializeOwned>() -> de::Result<T> {
     deserialize(&mut stdin().lock())
 }
 
 /// Serialize a value to string.
+///
+/// # Errors
+/// - If the value cannot be serialized.
 pub fn to_string<T: Serialize>(value: &T) -> ser::Result<String> {
     let mut serializer = ser::Serializer::default();
     value.serialize(&mut serializer)?;
@@ -23,6 +32,9 @@ pub fn to_string<T: Serialize>(value: &T) -> ser::Result<String> {
 }
 
 /// Serialize a value to stdout.
+///
+/// # Errors
+/// - If the value cannot be serialized.
 pub fn to_stdout<T: Serialize>(value: &T) -> ser::Result<()> {
     println!("{}", to_string(value)?);
     Ok(())

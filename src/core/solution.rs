@@ -12,8 +12,9 @@ pub struct ScheduleInfo {
 
 impl ScheduleInfo {
     /// Creates new schedule info.
-    pub fn new(start: u64, processor: usize) -> Self {
-        ScheduleInfo { start, processor }
+    #[must_use]
+    pub const fn new(start: u64, processor: usize) -> Self {
+        Self { processor, start }
     }
 }
 
@@ -27,6 +28,7 @@ pub struct Schedule<'a> {
 
 impl<'a> Schedule<'a> {
     /// Creates a new schedule.
+    #[must_use]
     pub fn new(instance: &'a Instance) -> Self {
         Schedule {
             instance,
@@ -45,24 +47,25 @@ impl<'a> Schedule<'a> {
     }
 
     /// Get the schedule info for a task.
+    #[must_use]
     pub fn get_schedule(&self, task: usize) -> Option<&ScheduleInfo> {
         self.schedule[task].as_ref()
     }
 
     /// Check if the given task with the given start time is in conflict with another task.
+    #[must_use]
     pub fn in_conflict(&self, task: usize, start: u64) -> bool {
         self.instance.graph.conflicts(task).iter().any(|&other| {
-            if let Some(info) = self.schedule[other] {
+            self.schedule[other].map_or(false, |info| {
                 let task = &self.instance.tasks[task];
                 let other = &self.instance.tasks[other];
                 start < info.start + other.time && info.start < start + task.time
-            } else {
-                false
-            }
+            })
         })
     }
 
     /// Calculates the score of the schedule.
+    #[must_use]
     pub fn calculate_score(&self) -> u64 {
         let mut score = 0;
         for (info, task) in self.schedule.iter().zip(&self.instance.tasks) {
@@ -76,6 +79,7 @@ impl<'a> Schedule<'a> {
     }
 
     /// Checks if schedule is valid.
+    #[must_use]
     pub fn verify(&self) -> bool {
         let mut machines = vec![BTreeMap::new(); self.instance.processors];
 

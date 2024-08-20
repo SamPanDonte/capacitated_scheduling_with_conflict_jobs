@@ -9,7 +9,7 @@ pub enum Error {
 
 impl ser::Error for Error {
     fn custom<T: core::fmt::Display>(msg: T) -> Self {
-        Error::Custom(msg.to_string())
+        Self::Custom(msg.to_string())
     }
 }
 
@@ -46,12 +46,17 @@ impl Serializer {
         }
     }
 
-    fn add_to_buffer<T: ToString>(&mut self, value: T) {
+    fn add_to_buffer<T: ToString>(&mut self, value: &T) {
         self.0.push_str(&value.to_string());
     }
 
-    fn parse_field<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<()> {
+    fn whitespace_field<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<()> {
         self.ensure_white_space();
+        value.serialize(&mut *self)
+    }
+
+    fn new_line_field<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<()> {
+        self.ensure_new_line();
         value.serialize(&mut *self)
     }
 }
@@ -68,7 +73,7 @@ impl ser::Serializer for &mut Serializer {
     type SerializeStructVariant = Self;
 
     fn serialize_bool(self, value: bool) -> Result<()> {
-        self.add_to_buffer(value);
+        self.add_to_buffer(&value);
         Ok(())
     }
 
@@ -85,12 +90,12 @@ impl ser::Serializer for &mut Serializer {
     }
 
     fn serialize_i64(self, value: i64) -> Result<()> {
-        self.add_to_buffer(value);
+        self.add_to_buffer(&value);
         Ok(())
     }
 
     fn serialize_i128(self, value: i128) -> Result<()> {
-        self.add_to_buffer(value);
+        self.add_to_buffer(&value);
         Ok(())
     }
 
@@ -107,12 +112,12 @@ impl ser::Serializer for &mut Serializer {
     }
 
     fn serialize_u64(self, value: u64) -> Result<()> {
-        self.add_to_buffer(value);
+        self.add_to_buffer(&value);
         Ok(())
     }
 
     fn serialize_u128(self, value: u128) -> Result<()> {
-        self.add_to_buffer(value);
+        self.add_to_buffer(&value);
         Ok(())
     }
 
@@ -121,7 +126,7 @@ impl ser::Serializer for &mut Serializer {
     }
 
     fn serialize_f64(self, value: f64) -> Result<()> {
-        self.add_to_buffer(value);
+        self.add_to_buffer(&value);
         Ok(())
     }
 
@@ -131,7 +136,7 @@ impl ser::Serializer for &mut Serializer {
     }
 
     fn serialize_str(self, value: &str) -> Result<()> {
-        self.add_to_buffer(value);
+        self.add_to_buffer(&value);
         Ok(())
     }
 
@@ -231,8 +236,7 @@ impl ser::SerializeSeq for &mut Serializer {
     type Error = Error;
 
     fn serialize_element<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<()> {
-        self.ensure_new_line();
-        value.serialize(&mut **self)
+        self.new_line_field(value)
     }
 
     fn end(self) -> Result<()> {
@@ -247,8 +251,7 @@ impl ser::SerializeTuple for &mut Serializer {
     type Error = Error;
 
     fn serialize_element<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<()> {
-        self.ensure_white_space();
-        value.serialize(&mut **self)
+        self.whitespace_field(value)
     }
 
     fn end(self) -> Result<()> {
@@ -261,8 +264,7 @@ impl ser::SerializeTupleStruct for &mut Serializer {
     type Error = Error;
 
     fn serialize_field<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<()> {
-        self.ensure_white_space();
-        value.serialize(&mut **self)
+        self.whitespace_field(value)
     }
 
     fn end(self) -> Result<()> {
@@ -275,8 +277,7 @@ impl ser::SerializeTupleVariant for &mut Serializer {
     type Error = Error;
 
     fn serialize_field<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<()> {
-        self.ensure_white_space();
-        value.serialize(&mut **self)
+        self.whitespace_field(value)
     }
 
     fn end(self) -> Result<()> {
@@ -289,13 +290,11 @@ impl ser::SerializeMap for &mut Serializer {
     type Error = Error;
 
     fn serialize_key<T: ?Sized + Serialize>(&mut self, key: &T) -> Result<()> {
-        self.ensure_new_line();
-        key.serialize(&mut **self)
+        self.new_line_field(key)
     }
 
     fn serialize_value<T: ?Sized + Serialize>(&mut self, value: &T) -> Result<()> {
-        self.ensure_white_space();
-        value.serialize(&mut **self)
+        self.whitespace_field(value)
     }
 
     fn end(self) -> Result<()> {
@@ -310,7 +309,7 @@ impl ser::SerializeStruct for &mut Serializer {
     type Error = Error;
 
     fn serialize_field<T: ?Sized + Serialize>(&mut self, _: &'static str, value: &T) -> Result<()> {
-        self.parse_field(value)
+        self.whitespace_field(value)
     }
 
     fn end(self) -> Result<()> {
@@ -323,7 +322,7 @@ impl ser::SerializeStructVariant for &mut Serializer {
     type Error = Error;
 
     fn serialize_field<T: ?Sized + Serialize>(&mut self, _: &'static str, value: &T) -> Result<()> {
-        self.parse_field(value)
+        self.whitespace_field(value)
     }
 
     fn end(self) -> Result<()> {
@@ -425,7 +424,7 @@ mod tests {
     #[test]
     fn serialize_bytes() {
         let mut serializer = Serializer::default();
-        serializer.serialize_bytes(&[0x01, 0x02, 0xab]).unwrap();
+        assert!(serializer.serialize_bytes(&[0x01, 0x02, 0xab]).is_ok());
         assert_eq!(serializer.0, "0102AB");
     }
 
