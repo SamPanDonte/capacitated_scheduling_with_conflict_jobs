@@ -1,15 +1,6 @@
-#![deny(
-    clippy::all,
-    clippy::pedantic,
-    clippy::nursery,
-    clippy::cargo,
-    clippy::as_conversions,
-    clippy::expect_used,
-    clippy::redundant_type_annotations,
-    clippy::undocumented_unsafe_blocks,
-    clippy::unimplemented,
-    clippy::unwrap_used
-)]
+#![deny(clippy::all, clippy::cargo, clippy::expect_used, clippy::unwrap_used)]
+#![deny(clippy::pedantic, clippy::nursery, unsafe_code)]
+#![warn(clippy::unimplemented, clippy::redundant_type_annotations)]
 
 pub mod algo;
 pub mod core;
@@ -48,4 +39,25 @@ macro_rules! binary_main {
             run_from_stdin($input)
         }
     };
+}
+
+#[cfg(not(target_pointer_width = "64"))]
+compile_error!("Must be 64-bit system!");
+
+/// Casts the given value to `usize`.
+/// It should never fail on 64-bit systems.
+///
+/// # Panics
+/// - If the value cannot be cast to `usize`.
+fn cast_usize(value: u64) -> usize {
+    usize::try_from(value).unwrap_or_else(|_| unreachable!("Must be 64-bit system!"))
+}
+
+/// Casts the given value to `u64`.
+/// It should never fail on 64-bit systems.
+///
+/// # Panics
+/// - If the value cannot be cast to `usize`.
+fn cast_u64(value: usize) -> u64 {
+    u64::try_from(value).unwrap_or_else(|_| unreachable!("Must be 64-bit system!"))
 }

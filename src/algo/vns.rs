@@ -327,6 +327,7 @@ fn neighborhood_search(mut schedule: ScheduleBuilder) -> ScheduleBuilder {
 
 /// Performs the Variable Neighborhood Search algorithm.
 /// It is done inside iterations of the Local Search algorithm.
+#[derive(Clone, Debug)]
 pub struct VariableNeighborhoodSearch {
     iterations: usize,
     rng: StdRng,
