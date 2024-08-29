@@ -1,7 +1,8 @@
+#[cfg(feature = "gurobi")]
 use capacitated_scheduling_with_conflicts::binary_main;
 
 #[cfg(feature = "gurobi")]
-binary_main!(algo::gurobi);
+binary_main!(&algo::gurobi);
 
 #[cfg(not(feature = "gurobi"))]
 fn main() {

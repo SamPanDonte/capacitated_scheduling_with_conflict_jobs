@@ -40,3 +40,14 @@ pub(super) fn schedule(instance: &Instance) -> ScheduleBuilder {
 pub fn list(instance: &Instance) -> Schedule {
     schedule(instance).into()
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::algo::run_samples;
+
+    #[test]
+    fn test_list() {
+        assert!(run_samples(false, false, usize::MAX, &&list).is_ok());
+    }
+}

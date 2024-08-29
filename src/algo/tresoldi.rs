@@ -113,7 +113,7 @@ impl<'a> ScheduleBuilder<'a> {
                         if self.matrix[cast_usize(time)][machine].is_none() {
                             free += 1;
 
-                            if free == task.1.time && self.check_conflicts(&task, time - free + 1) {
+                            if free == task.1.time && self.check_conflicts(&task, time + 1 - free) {
                                 best_time = time - free + 1;
                                 best_machine = machine;
                             }
@@ -255,5 +255,16 @@ impl Scheduler for Tresoldi {
         }
 
         best_solution.into()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::algo::run_samples;
+
+    #[test]
+    fn test_tresoldi() {
+        assert!(run_samples(false, false, usize::MAX, &Tresoldi::new(10, 0)).is_ok());
     }
 }

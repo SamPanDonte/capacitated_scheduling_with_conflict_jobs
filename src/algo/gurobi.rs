@@ -23,6 +23,10 @@ pub fn gurobi(instance: &Instance) -> Schedule {
 
 #[allow(clippy::useless_conversion)]
 fn gurobi_impl(instance: &Instance) -> Result<Schedule> {
+    if instance.tasks.is_empty() {
+        return Ok(Schedule::new(instance));
+    }
+
     let mut model = create_model("ILP1")?;
 
     let tasks = &instance.tasks;
@@ -186,4 +190,15 @@ fn job_time_vars(model: &mut Model, n: usize) -> Result<Vec<Var>> {
         tau.push(add_intvar!(model, name: &format!("p_{j}"), bounds: 0u64..)?);
     }
     Ok(tau)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::algo::run_samples;
+
+    #[test]
+    fn test_gurobi() {
+        assert!(run_samples(false, true, usize::MAX, &&gurobi).is_ok());
+    }
 }

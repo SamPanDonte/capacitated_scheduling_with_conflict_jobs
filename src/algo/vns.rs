@@ -355,6 +355,10 @@ impl Default for VariableNeighborhoodSearch {
 
 impl Scheduler for VariableNeighborhoodSearch {
     fn schedule(mut self, instance: &Instance) -> Schedule {
+        if instance.tasks.is_empty() {
+            return Schedule::new(instance);
+        }
+
         let mut schedule = neighborhood_search(super::list::schedule(instance));
         let mut best_score = schedule.calculate_score();
 
@@ -401,5 +405,17 @@ impl Scheduler for VariableNeighborhoodSearch {
         }
 
         schedule.into()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::algo::run_samples;
+
+    #[test]
+    fn test_vns() {
+        let vns = VariableNeighborhoodSearch::new(10, 0);
+        assert!(run_samples(false, false, usize::MAX, &vns).is_ok());
     }
 }
