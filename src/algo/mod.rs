@@ -1,12 +1,15 @@
 #[cfg(feature = "gurobi")]
 mod gurobi;
 mod list;
+mod matching;
+mod polynomial_time;
 mod tresoldi;
 mod vns;
 
 #[cfg(feature = "gurobi")]
 pub use gurobi::gurobi;
 pub use list::list;
+pub use polynomial_time::polynomial_time;
 pub use tresoldi::Tresoldi;
 pub use vns::VariableNeighborhoodSearch;
 
