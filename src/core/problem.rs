@@ -3,7 +3,6 @@ use serde::{Deserialize, Serialize};
 use std::sync::LazyLock;
 
 /// A task. Contains the processing time and weight of the task.
-#[non_exhaustive]
 #[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Serialize, PartialEq)]
 pub struct Task {
     pub time: u64,
@@ -80,4 +79,40 @@ pub struct Instance {
     pub deadline: u64,
     pub tasks: Vec<Task>,
     pub graph: ConflictGraph,
+}
+
+impl Instance {
+    /// Creates a new instance of the scheduling problem without conflicts.
+    #[must_use]
+    pub const fn new_no_conflict(processors: usize, deadline: u64, tasks: Vec<Task>) -> Self {
+        Self {
+            processors,
+            deadline,
+            tasks,
+            graph: ConflictGraph { edges: Vec::new() },
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn instance_should_serialize() -> anyhow::Result<()> {
+        let instance = Instance {
+            processors: 2,
+            deadline: 10,
+            tasks: vec![Task { time: 1, weight: 1 }, Task { time: 2, weight: 2 }],
+            graph: ConflictGraph::from(vec![Conflict(0, 1)]),
+        };
+
+        let serialized = crate::data::to_string(&instance)?;
+        let mut reader = std::io::Cursor::new(serialized);
+        let deserialized: Instance = crate::data::deserialize(&mut reader)?;
+
+        assert_eq!(instance, deserialized);
+
+        Ok(())
+    }
 }
