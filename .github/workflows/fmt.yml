@@ -1,0 +1,27 @@
+name: Rust code formatting
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Run rust fmt
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Prepare cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run rust fmt
+        run: cargo fmt --all -- --check
