@@ -102,7 +102,7 @@ pub fn run(dir: &str, valid: bool, solver: &mut dyn Scheduler) -> anyhow::Result
         let file = file?;
         let (name, machines, result, is_unit) = parse_filename(&file.file_name())?;
 
-        if (!solver.non_unit() || is_unit) && machines <= solver.maximum_machine() {
+        if (solver.non_unit() || is_unit) && machines <= solver.maximum_machine() {
             let instance = deserialize(&mut BufReader::new(File::open(file.path())?))?;
 
             let time = std::time::Instant::now();

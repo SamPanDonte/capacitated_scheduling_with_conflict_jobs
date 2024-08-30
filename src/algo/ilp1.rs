@@ -3,9 +3,9 @@
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss
 )]
+use super::gurobi::{conflict_vars, create_model, tardy_vars};
 use crate::cast_usize;
 use crate::core::{Instance, Schedule, ScheduleInfo, Scheduler, Task};
-use ahash::{HashMap, HashMapExt};
 use anyhow::Result;
 use grb::prelude::*;
 
@@ -115,7 +115,9 @@ fn ilp1_impl(instance: &Instance) -> Result<Schedule> {
 
     for (j, vars) in y.iter().enumerate() {
         for (&g, &var) in vars {
-            model.add_constr(&format!("c_7_{j}_{g}"), c!(var + y[g][&j] <= 1))?;
+            if j < g {
+                model.add_constr(&format!("c_7_{j}_{g}"), c!(var + y[g][&j] <= 1))?;
+            }
         }
     }
 
@@ -140,13 +142,6 @@ fn ilp1_impl(instance: &Instance) -> Result<Schedule> {
     Ok(result)
 }
 
-fn create_model(name: &str) -> Result<Model> {
-    let mut env = Env::new("")?;
-    env.set(param::OutputFlag, 0)?;
-    env.set(param::LogToConsole, 0)?;
-    Ok(Model::with_env(name, env)?)
-}
-
 fn calculate_k_max(tasks: &[Task], deadline: u64) -> usize {
     let min_time = tasks.iter().map(|task| task.time).min().unwrap_or_default();
     tasks.len().min(cast_usize(deadline / min_time))
@@ -162,24 +157,6 @@ fn position_vars(model: &mut Model, n: usize, k: usize, m: usize) -> Result<Vec<
         }
     }
     Ok(w)
-}
-
-fn tardy_vars(model: &mut Model, n: usize) -> Result<Vec<Var>> {
-    let mut u = Vec::with_capacity(n);
-    for j in 0..n {
-        u.push(add_binvar!(model, name: &format!("u_{j}"))?);
-    }
-    Ok(u)
-}
-
-fn conflict_vars(model: &mut Model, instance: &Instance) -> Result<Vec<HashMap<usize, Var>>> {
-    let mut y = vec![HashMap::new(); instance.tasks.len()];
-    for (j, yj) in y.iter_mut().enumerate() {
-        for &g in instance.graph.conflicts(j) {
-            yj.insert(g, add_binvar!(model, name: &format!("y_{j}_{g}"))?);
-        }
-    }
-    Ok(y)
 }
 
 fn time_vars(model: &mut Model, k: usize, m: usize) -> Result<Vec<Vec<Var>>> {
@@ -206,7 +183,7 @@ mod test {
     use crate::data::samples;
 
     #[test]
-    fn test_gurobi() {
+    fn test_ilp1() {
         assert!(samples(true, &mut ILP1).is_ok());
     }
 }
