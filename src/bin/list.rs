@@ -1,3 +1,3 @@
 use capacitated_scheduling_with_conflicts::binary_main;
 
-binary_main!(&algo::list);
+binary_main!(algo::List);

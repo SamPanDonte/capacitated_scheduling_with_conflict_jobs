@@ -7,13 +7,20 @@ pub use solution::*;
 pub use util::*;
 
 /// Schedules the tasks of an instance.
-pub trait Scheduler: Clone {
+pub trait Scheduler {
     /// Schedules the tasks of the given instance.
-    fn schedule(self, instance: &Instance) -> Schedule;
-}
+    fn schedule<'a>(&mut self, instance: &'a Instance) -> Schedule<'a>;
 
-impl<T: Fn(&Instance) -> Schedule> Scheduler for &T {
-    fn schedule(self, instance: &Instance) -> Schedule {
-        self(instance)
+    /// Returns whether the scheduler handles non-unit tasks.
+    fn non_unit(&self) -> bool {
+        true
     }
+
+    /// Returns the maximum number of machines the scheduler can handle.
+    fn maximum_machine(&self) -> usize {
+        usize::MAX
+    }
+
+    /// Returns the name of the scheduler.
+    fn name(&self) -> &str;
 }

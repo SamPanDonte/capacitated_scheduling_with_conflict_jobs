@@ -354,7 +354,7 @@ impl Default for VariableNeighborhoodSearch {
 }
 
 impl Scheduler for VariableNeighborhoodSearch {
-    fn schedule(mut self, instance: &Instance) -> Schedule {
+    fn schedule<'a>(&mut self, instance: &'a Instance) -> Schedule<'a> {
         if instance.tasks.is_empty() {
             return Schedule::new(instance);
         }
@@ -406,16 +406,24 @@ impl Scheduler for VariableNeighborhoodSearch {
 
         schedule.into()
     }
+
+    fn name(&self) -> &'static str {
+        "VNS"
+    }
 }
+
+#[allow(unsafe_code)]
+#[linkme::distributed_slice(super::SCHEDULERS)]
+static INSTANCE: fn() -> Box<dyn Scheduler> = || Box::new(VariableNeighborhoodSearch::default());
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::algo::run_samples;
+    use crate::data::samples;
 
     #[test]
     fn test_vns() {
-        let vns = VariableNeighborhoodSearch::new(10, 0);
-        assert!(run_samples(false, false, usize::MAX, &vns).is_ok());
+        let mut vns = VariableNeighborhoodSearch::new(10, 0);
+        assert!(samples(false, &mut vns).is_ok());
     }
 }

@@ -1,6 +1,6 @@
 use super::matching::{gabow_algo, Graph};
 use crate::cast_usize;
-use crate::core::{Instance, Schedule, ScheduleInfo};
+use crate::core::{Instance, Schedule, ScheduleInfo, Scheduler};
 
 /// Polynomial time algorithm for the problem.
 /// It is based on the maximum weighted matching in general graphs.
@@ -9,8 +9,32 @@ use crate::core::{Instance, Schedule, ScheduleInfo};
 /// # Panics
 /// - If the instance has more than two machines and at least one task.
 /// - If the instance tasks have different processing times.
-#[must_use]
-pub fn polynomial_time(instance: &Instance) -> Schedule {
+#[derive(Clone, Debug, Default)]
+pub struct PolynomialTime;
+
+impl Scheduler for PolynomialTime {
+    fn schedule<'a>(&mut self, instance: &'a Instance) -> Schedule<'a> {
+        polynomial_time(instance)
+    }
+
+    fn non_unit(&self) -> bool {
+        false
+    }
+
+    fn maximum_machine(&self) -> usize {
+        2
+    }
+
+    fn name(&self) -> &'static str {
+        "PolynomialTime"
+    }
+}
+
+#[allow(unsafe_code)]
+#[linkme::distributed_slice(super::SCHEDULERS)]
+static INSTANCE: fn() -> Box<dyn Scheduler> = || Box::new(PolynomialTime);
+
+fn polynomial_time(instance: &Instance) -> Schedule {
     if instance.tasks.is_empty() {
         return Schedule::new(instance);
     }
@@ -61,7 +85,7 @@ pub fn polynomial_time(instance: &Instance) -> Schedule {
             if paired_task < n {
                 schedule.schedule(paired_task, ScheduleInfo::new(current_time, 1));
             }
-            current_time += 1;
+            current_time += time;
         }
     }
 
@@ -71,12 +95,12 @@ pub fn polynomial_time(instance: &Instance) -> Schedule {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::algo::run_samples;
     use crate::core::Task;
+    use crate::data::samples;
 
     #[test]
     fn test_polynomial_time() {
-        assert!(run_samples(true, true, 2, &&polynomial_time).is_ok());
+        assert!(samples(true, &mut PolynomialTime).is_ok());
     }
 
     #[test]

@@ -4,25 +4,33 @@
     clippy::cast_sign_loss
 )]
 use crate::cast_usize;
-use crate::core::{Instance, Schedule, ScheduleInfo, Task};
+use crate::core::{Instance, Schedule, ScheduleInfo, Scheduler, Task};
 use ahash::{HashMap, HashMapExt};
 use anyhow::Result;
 use grb::prelude::*;
 
-/// Solve the instance using the Gurobi solver.
-///
-/// # Panics
-/// - If the Gurobi solver fails.
-#[must_use]
-pub fn gurobi(instance: &Instance) -> Schedule {
-    match gurobi_impl(instance) {
-        Ok(result) => result,
-        Err(err) => panic!("Gurobi failed {err}"),
+/// ILP1 scheduler.
+/// This scheduler uses the Gurobi solver to solve the instance.
+/// Its solve function panics if the Gurobi solver fails.
+#[derive(Clone, Debug, Default)]
+pub struct ILP1;
+
+impl Scheduler for ILP1 {
+    fn schedule<'a>(&mut self, instance: &'a Instance) -> Schedule<'a> {
+        ilp1_impl(instance).unwrap_or_else(|err| panic!("Gurobi failed {err}"))
+    }
+
+    fn name(&self) -> &'static str {
+        "ILP1"
     }
 }
 
+#[allow(unsafe_code)]
+#[linkme::distributed_slice(super::SCHEDULERS)]
+static INSTANCE: fn() -> Box<dyn Scheduler> = || Box::new(ILP1);
+
 #[allow(clippy::useless_conversion)]
-fn gurobi_impl(instance: &Instance) -> Result<Schedule> {
+fn ilp1_impl(instance: &Instance) -> Result<Schedule> {
     if instance.tasks.is_empty() {
         return Ok(Schedule::new(instance));
     }
@@ -195,10 +203,10 @@ fn job_time_vars(model: &mut Model, n: usize) -> Result<Vec<Var>> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::algo::run_samples;
+    use crate::data::samples;
 
     #[test]
     fn test_gurobi() {
-        assert!(run_samples(false, true, usize::MAX, &&gurobi).is_ok());
+        assert!(samples(true, &mut ILP1).is_ok());
     }
 }

@@ -1,6 +1,8 @@
 mod de;
+mod run;
 mod ser;
 
+pub use run::*;
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::io::{stdin, BufRead};

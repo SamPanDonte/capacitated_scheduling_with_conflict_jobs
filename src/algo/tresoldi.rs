@@ -223,6 +223,10 @@ impl Tresoldi {
     }
 }
 
+#[allow(unsafe_code)]
+#[linkme::distributed_slice(super::SCHEDULERS)]
+static INSTANCE: fn() -> Box<dyn Scheduler> = || Box::new(Tresoldi::default());
+
 impl Default for Tresoldi {
     fn default() -> Self {
         Self {
@@ -233,7 +237,7 @@ impl Default for Tresoldi {
 }
 
 impl Scheduler for Tresoldi {
-    fn schedule(mut self, instance: &Instance) -> Schedule {
+    fn schedule<'a>(&mut self, instance: &'a Instance) -> Schedule<'a> {
         let mut best_solution = ScheduleBuilder::empty(instance);
 
         for _ in 0..self.iterations {
@@ -256,15 +260,19 @@ impl Scheduler for Tresoldi {
 
         best_solution.into()
     }
+
+    fn name(&self) -> &'static str {
+        "Tresoldi"
+    }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::algo::run_samples;
+    use crate::data::samples;
 
     #[test]
     fn test_tresoldi() {
-        assert!(run_samples(false, false, usize::MAX, &Tresoldi::new(10, 0)).is_ok());
+        assert!(samples(false, &mut Tresoldi::new(10, 0)).is_ok());
     }
 }

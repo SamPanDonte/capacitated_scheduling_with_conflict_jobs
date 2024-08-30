@@ -10,8 +10,16 @@ pub struct Task {
 }
 
 /// A conflict between two tasks described by their indices.
-#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
-struct Conflict(usize, usize);
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Serialize, PartialEq)]
+pub struct Conflict(usize, usize);
+
+impl Conflict {
+    /// Creates a new conflict between two tasks.
+    #[must_use]
+    pub const fn new(first: usize, second: usize) -> Self {
+        Self(first, second)
+    }
+}
 
 /// A conflict graph. Contains an edge for every pair of tasks that conflict.
 #[derive(Clone, Debug, Deserialize, Eq, Serialize, PartialEq)]
@@ -90,6 +98,22 @@ impl Instance {
             deadline,
             tasks,
             graph: ConflictGraph { edges: Vec::new() },
+        }
+    }
+
+    /// Creates a new instance of the scheduling problem with conflicts.
+    #[must_use]
+    pub fn new(
+        processors: usize,
+        deadline: u64,
+        tasks: Vec<Task>,
+        conflicts: Vec<Conflict>,
+    ) -> Self {
+        Self {
+            processors,
+            deadline,
+            tasks,
+            graph: ConflictGraph::from(conflicts),
         }
     }
 }

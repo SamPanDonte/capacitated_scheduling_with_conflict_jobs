@@ -16,7 +16,7 @@ pub mod data;
 ///
 /// # Panics
 ///  - If the schedule is invalid in debug mode.
-pub fn run_from_stdin<T: core::Scheduler>(scheduler: T) -> anyhow::Result<()> {
+pub fn run_from_stdin<T: core::Scheduler>(mut scheduler: T) -> anyhow::Result<()> {
     let instance: core::Instance = data::from_stdin()?;
     let schedule = scheduler.schedule(&instance);
 
@@ -49,7 +49,8 @@ compile_error!("Must be 64-bit system!");
 ///
 /// # Panics
 /// - If the value cannot be cast to `usize`.
-fn cast_usize(value: u64) -> usize {
+#[must_use]
+pub fn cast_usize(value: u64) -> usize {
     usize::try_from(value).unwrap_or_else(|_| unreachable!("Must be 64-bit system!"))
 }
 
@@ -58,6 +59,7 @@ fn cast_usize(value: u64) -> usize {
 ///
 /// # Panics
 /// - If the value cannot be cast to `usize`.
-fn cast_u64(value: usize) -> u64 {
+#[must_use]
+pub fn cast_u64(value: usize) -> u64 {
     u64::try_from(value).unwrap_or_else(|_| unreachable!("Must be 64-bit system!"))
 }

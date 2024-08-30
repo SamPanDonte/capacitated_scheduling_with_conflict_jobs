@@ -36,18 +36,30 @@ pub(super) fn schedule(instance: &Instance) -> ScheduleBuilder {
 }
 
 /// Simple list scheduling algorithm.
-#[must_use]
-pub fn list(instance: &Instance) -> Schedule {
-    schedule(instance).into()
+#[derive(Clone, Debug, Default)]
+pub struct List;
+
+impl crate::core::Scheduler for List {
+    fn schedule<'a>(&mut self, instance: &'a Instance) -> Schedule<'a> {
+        schedule(instance).into()
+    }
+
+    fn name(&self) -> &'static str {
+        "List"
+    }
 }
+
+#[allow(unsafe_code)]
+#[linkme::distributed_slice(super::SCHEDULERS)]
+static INSTANCE: fn() -> Box<dyn crate::core::Scheduler> = || Box::new(List);
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::algo::run_samples;
+    use crate::data::samples;
 
     #[test]
     fn test_list() {
-        assert!(run_samples(false, false, usize::MAX, &&list).is_ok());
+        assert!(samples(false, &mut List).is_ok());
     }
 }
