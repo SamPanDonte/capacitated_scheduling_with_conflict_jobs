@@ -1,3 +1,4 @@
+mod genetic;
 #[cfg(feature = "gurobi")]
 mod gurobi;
 #[cfg(feature = "gurobi")]
@@ -10,6 +11,7 @@ mod polynomial_time;
 mod tresoldi;
 mod vns;
 
+pub use genetic::Genetic;
 #[cfg(feature = "gurobi")]
 pub use ilp1::ILP1;
 #[cfg(feature = "gurobi")]

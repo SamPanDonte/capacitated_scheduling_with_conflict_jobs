@@ -347,7 +347,7 @@ impl VariableNeighborhoodSearch {
 impl Default for VariableNeighborhoodSearch {
     fn default() -> Self {
         Self {
-            iterations: 10,
+            iterations: 200,
             rng: StdRng::from_rng(rand::thread_rng()).unwrap_or_else(|_| StdRng::seed_from_u64(0)),
         }
     }

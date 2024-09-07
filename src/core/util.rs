@@ -139,9 +139,7 @@ impl<'a> ScheduleBuilder<'a> {
     /// It returns None if there is no available time within deadline.
     #[must_use]
     pub fn calculate_non_conflict_time(&self, task: usize, minimum_time: u64) -> Option<u64> {
-        let task_time = self.instance.tasks[task].time;
-        let mut times: Vec<_> = self
-            .instance
+        self.instance
             .graph
             .conflicts(task)
             .iter()
@@ -150,11 +148,10 @@ impl<'a> ScheduleBuilder<'a> {
                 self.schedule.get_schedule(other).map(|info| info.start + t)
             })
             .filter(|&time| time >= minimum_time)
-            .filter(|&time| time + task_time <= self.instance.deadline)
             .filter(|&time| !self.schedule.in_conflict(task, time))
-            .collect();
-        times.sort_unstable();
-        times.first().copied()
+            .min()
+            .or(Some(minimum_time))
+            .filter(|&time| time + self.instance.tasks[task].time <= self.instance.deadline)
     }
 
     /// Reorganizes the schedule using the given operations.
