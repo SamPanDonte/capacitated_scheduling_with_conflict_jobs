@@ -15,7 +15,7 @@ pub struct Report {
 
 impl Report {
     /// Create a new report.
-    fn new(scheduler: String) -> Self {
+    const fn new(scheduler: String) -> Self {
         let entries = Vec::new();
         Self { scheduler, entries }
     }
@@ -36,6 +36,10 @@ impl Report {
 impl Display for Report {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         writeln!(f, "Scheduler: {}", self.scheduler)?;
+        if self.entries.is_empty() {
+            writeln!(f, "No compatible samples found")?;
+        }
+
         for entry in &self.entries {
             writeln!(f, "{entry}")?;
         }
@@ -62,7 +66,7 @@ impl Display for ReportEntry {
 /// Print the report to stdout.
 ///
 /// # Arguments
-/// - `valid` is true, check if the score is correct.
+/// - `valid` is the maximum number of machines to check validity,
 /// - `solver` is the scheduler to run.
 ///
 /// # Errors
@@ -72,7 +76,7 @@ impl Display for ReportEntry {
 /// # Panics
 /// - If the schedule is invalid.
 /// - If the score is incorrect and `score` is true.
-pub fn samples(valid: bool, solver: &mut dyn Scheduler) -> anyhow::Result<()> {
+pub fn samples(valid: usize, solver: &mut dyn Scheduler) -> anyhow::Result<()> {
     run("samples", valid, solver).and_then(|report| {
         if report.entries.is_empty() {
             Err(anyhow!("No samples found"))
@@ -86,7 +90,7 @@ pub fn samples(valid: bool, solver: &mut dyn Scheduler) -> anyhow::Result<()> {
 /// Run all samples in the `dir` directory.
 ///
 /// # Arguments
-/// - `score` is true, check if the score is correct.
+/// - `valid` is the maximum number of machines to check validity,
 /// - `solver` is the scheduler to run.
 ///
 /// # Errors
@@ -95,14 +99,14 @@ pub fn samples(valid: bool, solver: &mut dyn Scheduler) -> anyhow::Result<()> {
 /// # Panics
 /// - If the schedule is invalid.
 /// - If the score is incorrect.
-pub fn run(dir: &str, valid: bool, solver: &mut dyn Scheduler) -> anyhow::Result<Report> {
+pub fn run(dir: &str, valid: usize, solver: &mut dyn Scheduler) -> anyhow::Result<Report> {
     let mut report = Report::new(solver.name().into());
 
     for file in std::fs::read_dir(dir)? {
         let file = file?;
         let (name, machines, result, is_unit) = parse_filename(&file.file_name())?;
 
-        if (solver.non_unit() || is_unit) && machines <= solver.maximum_machine() {
+        if solver.non_unit() || is_unit {
             let instance = deserialize(&mut BufReader::new(File::open(file.path())?))?;
 
             let time = std::time::Instant::now();
@@ -112,7 +116,7 @@ pub fn run(dir: &str, valid: bool, solver: &mut dyn Scheduler) -> anyhow::Result
             assert!(schedule.verify(), "Invalid schedule created");
 
             let score = schedule.calculate_score();
-            if valid {
+            if valid >= machines {
                 assert_eq!(score, result, "Invalid score {name}");
             }
 

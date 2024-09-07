@@ -16,11 +16,6 @@ pub trait Scheduler {
         true
     }
 
-    /// Returns the maximum number of machines the scheduler can handle.
-    fn maximum_machine(&self) -> usize {
-        usize::MAX
-    }
-
     /// Returns the name of the scheduler.
-    fn name(&self) -> &str;
+    fn name(&self) -> &'static str;
 }

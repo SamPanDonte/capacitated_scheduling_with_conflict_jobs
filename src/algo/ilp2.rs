@@ -129,6 +129,6 @@ mod test {
 
     #[test]
     fn test_ilp2() {
-        assert!(samples(true, &mut ILP2).is_ok());
+        assert!(samples(usize::MAX, &mut ILP2).is_ok());
     }
 }

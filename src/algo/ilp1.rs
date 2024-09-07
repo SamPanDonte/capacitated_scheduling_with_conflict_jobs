@@ -184,6 +184,6 @@ mod test {
 
     #[test]
     fn test_ilp1() {
-        assert!(samples(true, &mut ILP1).is_ok());
+        assert!(samples(usize::MAX, &mut ILP1).is_ok());
     }
 }

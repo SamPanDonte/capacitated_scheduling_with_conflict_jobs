@@ -60,6 +60,6 @@ mod test {
 
     #[test]
     fn test_list() {
-        assert!(samples(false, &mut List).is_ok());
+        assert!(samples(0, &mut List).is_ok());
     }
 }

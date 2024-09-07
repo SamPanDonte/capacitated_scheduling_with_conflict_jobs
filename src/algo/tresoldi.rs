@@ -273,6 +273,6 @@ mod test {
 
     #[test]
     fn test_tresoldi() {
-        assert!(samples(false, &mut Tresoldi::new(10, 0)).is_ok());
+        assert!(samples(0, &mut Tresoldi::new(10, 0)).is_ok());
     }
 }

@@ -5,9 +5,9 @@ use crate::core::{Instance, Schedule, ScheduleInfo, Scheduler};
 /// Polynomial time algorithm for the problem.
 /// It is based on the maximum weighted matching in general graphs.
 /// It solves the problem in `O(n^3)` time complexity using Gabow's algorithm.
+/// For more than two machines, it founds an approximate solution.
 ///
 /// # Panics
-/// - If the instance has more than two machines and at least one task.
 /// - If the instance tasks have different processing times.
 #[derive(Clone, Debug, Default)]
 pub struct PolynomialTime;
@@ -19,10 +19,6 @@ impl Scheduler for PolynomialTime {
 
     fn non_unit(&self) -> bool {
         false
-    }
-
-    fn maximum_machine(&self) -> usize {
-        2
     }
 
     fn name(&self) -> &'static str {
@@ -41,7 +37,6 @@ fn polynomial_time(instance: &Instance) -> Schedule {
 
     let time = instance.tasks[0].time;
 
-    assert_eq!(instance.processors, 2, "Only two machines are supported");
     assert!(
         !instance.tasks.iter().any(|task| task.time != time),
         "All tasks must have the same processing time"
@@ -100,14 +95,7 @@ mod test {
 
     #[test]
     fn test_polynomial_time() {
-        assert!(samples(true, &mut PolynomialTime).is_ok());
-    }
-
-    #[test]
-    #[should_panic(expected = "Only two machines are supported")]
-    fn test_too_many_machines() {
-        let tasks = vec![Task { weight: 1, time: 1 }];
-        let _ = polynomial_time(&Instance::new_no_conflict(3, 3, tasks));
+        assert!(samples(2, &mut PolynomialTime).is_ok());
     }
 
     #[test]

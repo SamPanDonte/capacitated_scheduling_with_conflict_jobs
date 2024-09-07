@@ -1,5 +1,5 @@
 [package]
-name = "capacitated_scheduling_with_conflicts"
+name = "cspcj"
 version = "0.1.0"
 authors = ["Bartosz Wawrzyniak <bartosz.wawrzyniak.2000@gmail.com>"]
 edition = "2021"

@@ -424,6 +424,6 @@ mod test {
     #[test]
     fn test_vns() {
         let mut vns = VariableNeighborhoodSearch::new(10, 0);
-        assert!(samples(false, &mut vns).is_ok());
+        assert!(samples(0, &mut vns).is_ok());
     }
 }
