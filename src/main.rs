@@ -69,6 +69,9 @@ enum Application {
         /// Number of test cases to generate.
         #[clap(short, long, default_value = "1")]
         amount: NonZero<u64>,
+        /// Maximum weight of a task.
+        #[clap(short, long, default_value = "5")]
+        max_weight: NonZero<u64>,
         /// Path to output the generated instances. If the directory does not exist, it will be created.
         #[clap(short, long, default_value = "output")]
         output: String,
@@ -84,7 +87,7 @@ fn compute_deadline(max_time: u64, tasks_number: usize, processors: usize, ratio
     ((max_time * cast_u64(tasks_number)) as f64 * ratio / (processors * 2) as f64).ceil() as u64
 }
 
-fn gen_tasks(tasks_number: usize, max_time: u64, unit: bool) -> Vec<Task> {
+fn gen_tasks(tasks_number: usize, max_time: u64, max_weight: u64, unit: bool) -> Vec<Task> {
     let mut rng = thread_rng();
     let mut tasks = Vec::with_capacity(tasks_number);
     for _ in 0..tasks_number {
@@ -93,17 +96,17 @@ fn gen_tasks(tasks_number: usize, max_time: u64, unit: bool) -> Vec<Task> {
         } else {
             rng.gen_range(1..=max_time)
         };
-        let weight = rng.gen_range(1..=100);
+        let weight = rng.gen_range(1..=max_weight);
         tasks.push(Task { time, weight });
     }
     tasks
 }
 
 fn gen_conflicts(tasks: usize, ratio: f64) -> Vec<Conflict> {
-    let all = (tasks * (tasks - 1)) / 2;
-    let required = (all as f64 / ratio).ceil() as usize;
-    (0..all)
-        .map(|i| Conflict::new(i / tasks, i % tasks))
+    let required = (((tasks * (tasks - 1)) / 2) as f64 * ratio).ceil() as usize;
+    (0..tasks)
+        .flat_map(|i| std::iter::repeat(i).zip(i + 1..tasks))
+        .map(|(i, j)| Conflict::new(i, j))
         .choose_multiple(&mut thread_rng(), required)
 }
 
@@ -127,6 +130,7 @@ fn main() -> anyhow::Result<()> {
             conflict_ratio,
             same_duration,
             amount,
+            max_weight,
             output,
         } => {
             let processors = processors.get();
@@ -142,7 +146,7 @@ fn main() -> anyhow::Result<()> {
                 let instance = Instance::new(
                     processors,
                     compute_deadline(max_time, tasks, processors, deadline_ratio),
-                    gen_tasks(tasks, max_time, same_duration),
+                    gen_tasks(tasks, max_time, max_weight.get(), same_duration),
                     gen_conflicts(tasks, conflict_ratio),
                 );
                 let filename = format!(

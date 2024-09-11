@@ -7,6 +7,7 @@ pub fn create_model(name: &str) -> Result<Model> {
     let mut env = Env::new("")?;
     env.set(param::OutputFlag, 0)?;
     env.set(param::LogToConsole, 0)?;
+    env.set(param::TimeLimit, 3600.0)?;
     Ok(Model::with_env(name, env)?)
 }
 

@@ -23,7 +23,7 @@ impl Genetic {
 
 impl Default for Genetic {
     fn default() -> Self {
-        let generations = 250;
+        let generations = 150;
         let rng = StdRng::from_entropy();
         Self { generations, rng }
     }
@@ -39,34 +39,34 @@ impl Scheduler for Genetic {
             return Solution::new(vec![0], instance).to_schedule(instance);
         }
 
-        let mut solutions: Vec<_> = (0..50 * instance.tasks.len())
+        let mut population: Vec<_> = (0..50 * instance.tasks.len())
             .map(|_| Solution::gen(&mut self.rng, instance))
             .collect();
 
-        solutions.sort_unstable();
-        solutions.truncate(POPULATION_RATIO * instance.tasks.len());
+        population.sort_unstable();
+        population.truncate(POPULATION_RATIO * instance.tasks.len());
 
         for _ in 0..self.generations {
             for _ in 0..POPULATION_RATIO * instance.tasks.len() {
                 let parents = (
-                    solutions.choose(&mut self.rng),
-                    solutions.choose(&mut self.rng),
+                    population.choose(&mut self.rng),
+                    population.choose(&mut self.rng),
                 );
 
                 if let (Some(first), Some(second)) = parents {
-                    solutions.push(Solution::cross(first, second, instance));
+                    population.push(Solution::cross(first, second, instance));
                 }
 
-                if let Some(solution) = solutions.choose(&mut self.rng) {
-                    solutions.push(solution.mutate(&mut self.rng, instance));
+                if let Some(solution) = population.choose(&mut self.rng) {
+                    population.push(solution.mutate(&mut self.rng, instance));
                 }
             }
 
-            solutions.sort_unstable();
-            solutions.truncate(POPULATION_RATIO * instance.tasks.len());
+            population.sort_unstable();
+            population.truncate(POPULATION_RATIO * instance.tasks.len());
         }
 
-        solutions[0].to_schedule(instance)
+        population[0].to_schedule(instance)
     }
 
     fn name(&self) -> &'static str {
@@ -97,7 +97,7 @@ impl Solution {
         for &index in permutation {
             let task = instance.tasks[index];
 
-            if machines.first().is_some_and(|m| m.free + task.time >= d) {
+            if machines.first().is_some_and(|m| m.free + task.time > d) {
                 continue;
             }
 
