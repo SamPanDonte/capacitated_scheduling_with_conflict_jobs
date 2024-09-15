@@ -114,7 +114,10 @@ fn estimate_result(instance: &Instance, unit: bool) -> anyhow::Result<u64> {
     if unit {
         algo::PolynomialTime.estimate_upper_bound(instance)
     } else {
-        algo::ILP2.estimate_upper_bound(instance, 60.0)
+        #[cfg(feature = "gurobi")]
+        return algo::ILP2.estimate_upper_bound(instance, 60.0);
+        #[cfg(not(feature = "gurobi"))]
+        return Ok(instance.tasks.iter().map(|t| t.weight).sum::<u64>());
     }
 }
 

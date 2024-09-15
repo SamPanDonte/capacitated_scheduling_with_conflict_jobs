@@ -24,7 +24,7 @@ impl PolynomialTime {
         }
 
         let time = instance.tasks[0].time;
-        if !instance.tasks.iter().any(|task| task.time != time) {
+        if instance.tasks.iter().any(|task| task.time != time) {
             return Err(anyhow!("All tasks must have the same processing time"));
         }
 
