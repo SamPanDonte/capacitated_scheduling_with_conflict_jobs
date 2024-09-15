@@ -3,8 +3,6 @@ use rand::prelude::*;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 
-static POPULATION_RATIO: usize = 1;
-
 /// Performs a genetic algorithm to solve the problem.
 #[derive(Clone, Debug)]
 pub struct Genetic {
@@ -23,7 +21,7 @@ impl Genetic {
 
 impl Default for Genetic {
     fn default() -> Self {
-        let generations = 300;
+        let generations = 800;
         let rng = StdRng::from_entropy();
         Self { generations, rng }
     }
@@ -44,26 +42,28 @@ impl Scheduler for Genetic {
             .collect();
 
         population.sort_unstable();
-        population.truncate(POPULATION_RATIO * instance.tasks.len());
+        population.truncate(instance.tasks.len());
 
         for _ in 0..self.generations {
-            for _ in 0..POPULATION_RATIO * instance.tasks.len() {
-                let parents = (
-                    population.choose(&mut self.rng),
-                    population.choose(&mut self.rng),
-                );
+            for i in 0..instance.tasks.len() / 3 {
+                if i % 3 == 0 {
+                    let parents = (
+                        population[..instance.tasks.len()].choose(&mut self.rng),
+                        population[..instance.tasks.len()].choose(&mut self.rng),
+                    );
 
-                if let (Some(first), Some(second)) = parents {
-                    population.push(Solution::cross(first, second, instance));
+                    if let (Some(first), Some(second)) = parents {
+                        population.push(Solution::cross(first, second, instance));
+                    }
                 }
 
-                if let Some(solution) = population.choose(&mut self.rng) {
+                if let Some(solution) = population[..instance.tasks.len()].choose(&mut self.rng) {
                     population.push(solution.mutate(&mut self.rng, instance));
                 }
             }
 
             population.sort_unstable();
-            population.truncate(POPULATION_RATIO * instance.tasks.len());
+            population.truncate(instance.tasks.len());
         }
 
         population[0].to_schedule(instance)

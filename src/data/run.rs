@@ -128,6 +128,11 @@ pub fn run(dir: &str, valid: usize, solver: &mut dyn Scheduler) -> anyhow::Resul
 
     for file in std::fs::read_dir(dir)? {
         let file = file?;
+
+        if file.path().extension() != Some("in".as_ref()) {
+            continue;
+        }
+
         let (name, machines, result, is_unit) = parse_filename(&file.file_name())?;
 
         if solver.non_unit() || is_unit {
