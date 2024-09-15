@@ -55,7 +55,7 @@ impl Display for Report {
             error_sum += entry.error;
         }
 
-        if self.entries.is_empty() {
+        if !self.entries.is_empty() {
             let time = time_sum / entries_len;
             let error = error_sum / entries_len;
 
