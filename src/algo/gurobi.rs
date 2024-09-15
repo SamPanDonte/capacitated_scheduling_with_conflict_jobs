@@ -3,11 +3,11 @@ use ahash::{HashMap, HashMapExt};
 use anyhow::Result;
 use grb::{add_binvar, param, Env, Model, Var};
 
-pub fn create_model(name: &str) -> Result<Model> {
+pub fn create_model(name: &str, timeout: f64) -> Result<Model> {
     let mut env = Env::new("")?;
     env.set(param::OutputFlag, 0)?;
     env.set(param::LogToConsole, 0)?;
-    env.set(param::TimeLimit, 3600.0)?;
+    env.set(param::TimeLimit, timeout)?;
     Ok(Model::with_env(name, env)?)
 }
 

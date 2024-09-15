@@ -35,7 +35,7 @@ fn ilp1_impl(instance: &Instance) -> Result<Schedule> {
         return Ok(Schedule::new(instance));
     }
 
-    let mut model = create_model("ILP1")?;
+    let mut model = create_model("ILP1", 600.0)?;
 
     let tasks = &instance.tasks;
     let k_max = calculate_k_max(tasks, instance.deadline);

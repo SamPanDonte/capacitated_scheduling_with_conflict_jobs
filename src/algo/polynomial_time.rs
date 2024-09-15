@@ -1,6 +1,7 @@
 use super::matching::{gabow_algo, Graph};
 use crate::cast_usize;
 use crate::core::{Instance, Schedule, ScheduleInfo, Scheduler};
+use anyhow::anyhow;
 
 /// Polynomial time algorithm for the problem.
 /// It is based on the maximum weighted matching in general graphs.
@@ -11,6 +12,28 @@ use crate::core::{Instance, Schedule, ScheduleInfo, Scheduler};
 /// - If the instance tasks have different processing times.
 #[derive(Clone, Debug, Default)]
 pub struct PolynomialTime;
+
+impl PolynomialTime {
+    /// Estimate the upper bound of the instance.
+    ///
+    /// # Errors
+    /// - If the instance tasks have different processing times.
+    pub fn estimate_upper_bound(&mut self, instance: &Instance) -> anyhow::Result<u64> {
+        if instance.tasks.is_empty() {
+            return Ok(0);
+        }
+
+        let time = instance.tasks[0].time;
+        if !instance.tasks.iter().any(|task| task.time != time) {
+            return Err(anyhow!("All tasks must have the same processing time"));
+        }
+
+        let schedule = self.schedule(instance);
+        let score = schedule.calculate_score();
+
+        Ok(score * instance.processors as u64 / 2)
+    }
+}
 
 impl Scheduler for PolynomialTime {
     fn schedule<'a>(&mut self, instance: &'a Instance) -> Schedule<'a> {

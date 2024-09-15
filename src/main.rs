@@ -110,6 +110,14 @@ fn gen_conflicts(tasks: usize, ratio: f64) -> Vec<Conflict> {
         .choose_multiple(&mut thread_rng(), required)
 }
 
+fn estimate_result(instance: &Instance, unit: bool) -> anyhow::Result<u64> {
+    if unit {
+        algo::PolynomialTime.estimate_upper_bound(instance)
+    } else {
+        algo::ILP2.estimate_upper_bound(instance, 60.0)
+    }
+}
+
 fn main() -> anyhow::Result<()> {
     match Application::parse() {
         Application::Run { algorithm } => {
@@ -149,8 +157,9 @@ fn main() -> anyhow::Result<()> {
                     gen_tasks(tasks, max_time, max_weight.get(), same_duration),
                     gen_conflicts(tasks, conflict_ratio),
                 );
+                let estimate = estimate_result(&instance, same_duration)?;
                 let filename = format!(
-                    "{processors}_0_{i}{}.in",
+                    "{processors}_{estimate}_{i}{}.in",
                     if same_duration { "_unit" } else { "" }
                 );
                 std::fs::File::create(output.join(filename))?

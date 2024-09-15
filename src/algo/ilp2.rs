@@ -16,6 +16,20 @@ use std::collections::BTreeSet;
 #[derive(Clone, Debug, Default)]
 pub struct ILP2;
 
+impl ILP2 {
+    /// Estimate the upper bound of the instance.
+    ///
+    /// # Errors
+    /// - If the Gurobi solver fails.
+    pub fn estimate_upper_bound(&self, instance: &Instance, timeout: f64) -> Result<u64> {
+        let (mut model, _) = prepare_model(instance, timeout)?;
+        model.optimize()?;
+
+        let min_delayed = model.get_attr(attr::ObjBound)?.ceil() as u64;
+        Ok(instance.tasks.iter().map(|t| t.weight).sum::<u64>() - min_delayed)
+    }
+}
+
 impl Scheduler for ILP2 {
     fn schedule<'a>(&mut self, instance: &'a Instance) -> Schedule<'a> {
         ilp2_impl(instance).unwrap_or_else(|err| panic!("Gurobi failed {err}"))
@@ -30,13 +44,40 @@ impl Scheduler for ILP2 {
 #[linkme::distributed_slice(super::SCHEDULERS)]
 static INSTANCE: fn() -> Box<dyn Scheduler> = || Box::new(ILP2);
 
-#[allow(clippy::useless_conversion)]
 fn ilp2_impl(instance: &Instance) -> Result<Schedule> {
     if instance.tasks.is_empty() {
         return Ok(Schedule::new(instance));
     }
 
-    let mut model = create_model("ILP2")?;
+    let (mut model, v) = prepare_model(instance, 600.0)?;
+    model.optimize()?;
+
+    let mut result = Schedule::new(instance);
+    let mut machines: BTreeSet<_> = (0..instance.processors).map(Machine::new).collect();
+
+    for t in 0..cast_usize(instance.deadline) {
+        for (j, task) in v.iter().enumerate() {
+            if task.len() > t && model.get_obj_attr(attr::X, &task[t])? as i64 == 1 {
+                let Some(machine) = machines.iter().find(|m| m.free <= cast_u64(t)) else {
+                    unreachable!("Must be free machine before time `t`");
+                };
+
+                result.schedule(j, ScheduleInfo::new(cast_u64(t), machine.id));
+
+                let mut machine = *machine;
+                machines.remove(&machine);
+                machine.free = cast_u64(t) + instance.tasks[j].time;
+                machines.insert(machine);
+            }
+        }
+    }
+
+    Ok(result)
+}
+
+#[allow(clippy::useless_conversion)]
+fn prepare_model(instance: &Instance, timeout: f64) -> Result<(Model, Vec<Vec<Var>>)> {
+    let mut model = create_model("ILP2", timeout)?;
 
     let tasks = &instance.tasks;
     let d = cast_usize(instance.deadline);
@@ -81,29 +122,8 @@ fn ilp2_impl(instance: &Instance) -> Result<Schedule> {
 
     let expr = u.iter().enumerate().map(|(j, &uj)| uj * tasks[j].weight);
     model.set_objective(expr.grb_sum(), Minimize)?;
-    model.optimize()?;
 
-    let mut result = Schedule::new(instance);
-    let mut machines: BTreeSet<_> = (0..instance.processors).map(Machine::new).collect();
-
-    for t in 0..d {
-        for (j, task) in v.iter().enumerate() {
-            if task.len() > t && model.get_obj_attr(attr::X, &task[t])? as i64 == 1 {
-                let Some(machine) = machines.iter().find(|m| m.free <= cast_u64(t)) else {
-                    unreachable!("Must be free machine before time `t`");
-                };
-
-                result.schedule(j, ScheduleInfo::new(cast_u64(t), machine.id));
-
-                let mut machine = *machine;
-                machines.remove(&machine);
-                machine.free = cast_u64(t) + tasks[j].time;
-                machines.insert(machine);
-            }
-        }
-    }
-
-    Ok(result)
+    Ok((model, v))
 }
 
 fn position_vars(model: &mut Model, tasks: &[Task], d: usize) -> Result<Vec<Vec<Var>>> {

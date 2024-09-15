@@ -7,7 +7,7 @@ use std::fs::File;
 use std::io::BufReader;
 
 /// Report of running a directory of samples.
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Report {
     scheduler: String,
     entries: Vec<ReportEntry>,
@@ -36,29 +36,53 @@ impl Report {
 impl Display for Report {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         writeln!(f, "Scheduler: {}", self.scheduler)?;
+
         if self.entries.is_empty() {
             writeln!(f, "No compatible samples found")?;
         }
 
-        for entry in &self.entries {
+        let mut entries = self.entries.clone();
+        entries.sort_by(|a, b| parse_number(&a.name).cmp(&parse_number(&b.name)));
+
+        #[allow(clippy::cast_precision_loss)]
+        let entries_len = entries.len() as f64;
+        let mut time_sum = 0.0;
+        let mut error_sum = 0.0;
+
+        for entry in entries {
             writeln!(f, "{entry}")?;
+            time_sum += entry.time;
+            error_sum += entry.error;
         }
+
+        if self.entries.is_empty() {
+            let time = time_sum / entries_len;
+            let error = error_sum / entries_len;
+
+            writeln!(f, "average time {time:.2}s, average error: {error:.2}")?;
+        }
+
         writeln!(f, "-------------------")
     }
 }
 
 /// Report of running a single sample.
 #[non_exhaustive]
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ReportEntry {
     pub name: String,
     pub score: u64,
+    pub error: f64,
     pub time: f64,
 }
 
 impl Display for ReportEntry {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{}: {} in {:.2} sec", self.name, self.score, self.time)
+        write!(
+            f,
+            "{}: {:.2}s, score: {}, error: {:.2}",
+            self.name, self.time, self.score, self.error
+        )
     }
 }
 
@@ -120,7 +144,15 @@ pub fn run(dir: &str, valid: usize, solver: &mut dyn Scheduler) -> anyhow::Resul
                 assert_eq!(score, result, "Invalid score {name}");
             }
 
-            report.entries.push(ReportEntry { name, score, time });
+            #[allow(clippy::cast_precision_loss)]
+            let error = 100.0 - (100 * score) as f64 / result as f64;
+
+            report.entries.push(ReportEntry {
+                name,
+                score,
+                error,
+                time,
+            });
         }
     }
 
@@ -138,6 +170,10 @@ fn parse_filename(filename: &std::ffi::OsString) -> anyhow::Result<(String, usiz
     let _: usize = parts.next().ok_or_else(|| anyhow!(NAME_ERR))?.parse()?;
     let is_unit = parts.next().is_some_and(|x| x == "unit");
     Ok((name.into(), machines, result, is_unit))
+}
+
+fn parse_number(filename: &str) -> Option<usize> {
+    filename.split('.').next()?.split('_').nth(2)?.parse().ok()
 }
 
 #[cfg(test)]
