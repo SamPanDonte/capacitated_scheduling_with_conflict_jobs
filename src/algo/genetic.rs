@@ -3,7 +3,7 @@ use rand::prelude::*;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
 
-static POPULATION_RATIO: usize = 2;
+static POPULATION_RATIO: usize = 1;
 
 /// Performs a genetic algorithm to solve the problem.
 #[derive(Clone, Debug)]
@@ -23,7 +23,7 @@ impl Genetic {
 
 impl Default for Genetic {
     fn default() -> Self {
-        let generations = 150;
+        let generations = 300;
         let rng = StdRng::from_entropy();
         Self { generations, rng }
     }
@@ -39,7 +39,7 @@ impl Scheduler for Genetic {
             return Solution::new(vec![0], instance).to_schedule(instance);
         }
 
-        let mut population: Vec<_> = (0..50 * instance.tasks.len())
+        let mut population: Vec<_> = (0..instance.tasks.len())
             .map(|_| Solution::gen(&mut self.rng, instance))
             .collect();
 
@@ -169,11 +169,9 @@ impl Solution {
     fn mutate(&self, rng: &mut impl RngCore, instance: &Instance) -> Self {
         let mut permutation = self.permutation.clone();
 
-        for _ in 0..1.max(instance.tasks.len() / 20) {
-            let mut indexes = permutation.choose_multiple(rng, 2).copied();
-            if let (Some(first), Some(second)) = (indexes.next(), indexes.next()) {
-                permutation.swap(first, second);
-            }
+        let mut indexes = permutation.choose_multiple(rng, 2).copied();
+        if let (Some(first), Some(second)) = (indexes.next(), indexes.next()) {
+            permutation.swap(first, second);
         }
 
         Self::new(permutation, instance)
